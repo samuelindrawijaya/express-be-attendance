@@ -45,7 +45,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     photo: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: true
     },
     notes: {
       type: DataTypes.TEXT,

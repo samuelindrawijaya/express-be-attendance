@@ -5,10 +5,13 @@ const axios = require('axios');
 async function clockInAttendance(data, file, user) {
     const { employee_id, type, notes } = data;
 
-    if (!employee_id || !type || !file) {
+    if (!employee_id || !type) {
         throw new BaseError('Missing required fields', 400, 'VALIDATION_ERROR');
     }
-
+    
+    if (type === 'wfh' && !file) {
+        throw new BaseError('Photo is required for WFH check-in', 400, 'PHOTO_REQUIRED');
+    }
     const today = new Date().toISOString().split('T')[0];
 
     const existing = await Attendance.findOne({
@@ -28,7 +31,7 @@ async function clockInAttendance(data, file, user) {
         date: today,
         check_in: new Date(),
         type,
-        photo: file.filename,
+        photo: file?.filename || null, // optional
         notes: notes || null
     });
 
@@ -40,6 +43,7 @@ async function clockInAttendance(data, file, user) {
         check_in: attendance.check_in
     };
 }
+
 
 async function clockOutAttendance(employee_id, user_id) {
     const today = new Date().toISOString().split('T')[0];
@@ -277,7 +281,7 @@ async function getAllAttendanceStats() {
         on_time: 0,
         late: 0
     };
-    
+
     for (const record of uniqueMap.values()) {
         if (record.type === 'wfh') stats.total_wfh++;
         if (record.type === 'onsite') stats.total_onsite++;

@@ -151,12 +151,38 @@ const resetPassword = async (req, res) => {
         );
     }
 };
+const getUserByIdController = async (req, res) => {
+    const { id } = req.params;
 
+    try {
+        const user = await authService.getUserById(id);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found or inactive',
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'User fetched successfully',
+            data: user,
+        });
+    } catch (error) {
+        console.error('Get user by ID controller error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+        });
+    }
+};
 module.exports = {
     registerUser,
     changePassword,
     resetPassword,
     getUserByEmail,
     setUserActiveStatusController,
-    getAllUsers
+    getAllUsers,
+    getUserByIdController
 }

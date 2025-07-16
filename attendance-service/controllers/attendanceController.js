@@ -7,6 +7,7 @@ const path = require('path');
 
 const checkInController = async (req, res) => {
     try {
+        console.log(req.body);
         const result = await clockInAttendance(req.body, req.file, req.user);
 
         return res.status(201).json(

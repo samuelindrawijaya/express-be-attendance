@@ -35,7 +35,7 @@ module.exports = {
       },
       photo: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: true
       },
       notes: {
         type: Sequelize.TEXT,

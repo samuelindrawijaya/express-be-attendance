@@ -374,6 +374,23 @@ class AuthService {
         };
     }
 
+    async getUserById(user_id) {
+        console.log(user_id);
+        try {
+            const user = await User.findOne({
+                where: {
+                    id: user_id, 
+                },
+                include: [{ model: Role, as: 'Role' }]
+            });
+
+            return user;
+        } catch (error) {
+            console.error('Get user by ID error:', error);
+            throw new Error('Failed to get user');
+        }
+    }
+
 }
 
 module.exports = new AuthService();

@@ -11,7 +11,6 @@ const { validate: UpdateMyProfileValidator } = require('../../shared/validators/
 
 const createEmployeeWithUserController = async (req, res) => {
     try {
-        console.log(req.body);
         EmployeeWithUserValidator(req.body);
 
         const result = await createEmployeeWithUser(req.body, req.file, req);
