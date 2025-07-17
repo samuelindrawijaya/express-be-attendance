@@ -137,3 +137,46 @@ DB_NAME=postgres
 ## 📄 License
 
 This backend project is part of a fullstack skill test. Adapt as needed.
+
+
+---
+
+## 🚀 Getting Started
+
+Each microservice (`auth-service`, `employee-service`, `attendance-service`) is located in its own directory and must be installed and run independently.
+
+### 🛠 Installation Steps
+
+Repeat the following for each service (`auth-service`, `employee-service`, `attendance-service`):
+
+```bash
+cd [service-folder-name]
+npm install
+```
+
+Example:
+```bash
+cd auth-service
+npm install
+
+cd ../employee-service
+npm install
+
+cd ../attendance-service
+npm install
+```
+
+### ▶️ Run Each Service
+
+```bash
+npm run dev
+```
+
+Each service listens on its own port:
+- `auth-service`: http://localhost:4002
+- `employee-service`: http://localhost:4003
+- `attendance-service`: http://localhost:4004
+
+### 🔄 Environment Variables
+
+Create a `.env` file in each service based on the values provided in the `README`. Be sure to use the correct JWT and database credentials in each one.
