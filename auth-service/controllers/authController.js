@@ -2,7 +2,6 @@ const LoginValidator = require('../../shared/validators/loginValidator');
 const { createResponse } = require('../../shared/utils/response');
 const authService = require('../services/authService');
 const BaseError = require('../../shared/utils/errors/BaseError');
-
 async function login(req, res) {
     try {
         LoginValidator.validate(req.body);
@@ -16,7 +15,7 @@ async function login(req, res) {
         res.cookie('refreshToken', result.tokens.refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
@@ -45,7 +44,7 @@ async function login(req, res) {
 const refreshAccessToken = async (req, res) => {
     try {
         const refreshToken = req.body.refreshToken || req.cookies?.refreshToken;
-
+        console.log('BERAPA KALI REFRESH TOKON');
         if (!refreshToken) {
             throw new BaseError('Refresh token is required', 400, 'MISSING_REFRESH_TOKEN');
         }
@@ -56,7 +55,7 @@ const refreshAccessToken = async (req, res) => {
         res.cookie('refreshToken', tokens.refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 

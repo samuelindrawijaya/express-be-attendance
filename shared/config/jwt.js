@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const JWT_CONFIG = {
     ACCESS_TOKEN_SECRET: process.env.JWT_ACCESS_SECRET || 'your-super-secret-access-key',
     REFRESH_TOKEN_SECRET: process.env.JWT_REFRESH_SECRET || 'your-super-secret-refresh-key',
-    ACCESS_TOKEN_EXPIRES_IN: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
+    ACCESS_TOKEN_EXPIRES_IN:'1m',
     REFRESH_TOKEN_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
     ISSUER: process.env.JWT_ISSUER || 'employee-management-system',
     AUDIENCE: process.env.JWT_AUDIENCE || 'employee-management-users'
@@ -16,12 +16,12 @@ const generateAccessToken = (payload) => {
     return jwt.sign(
         {
             ...payload,
-            jti: uuidv4(), // JWT ID for unique identification
+            jti: uuidv4(), 
             type: 'access'
         },
         JWT_CONFIG.ACCESS_TOKEN_SECRET,
         {
-            expiresIn: JWT_CONFIG.ACCESS_TOKEN_EXPIRES_IN,
+            expiresIn: "1m",
             issuer: JWT_CONFIG.ISSUER,
             audience: JWT_CONFIG.AUDIENCE
         }

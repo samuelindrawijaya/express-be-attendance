@@ -35,8 +35,6 @@ class AuthService {
                 throw new InvalidCredentialsError();
             }
 
-            console.log('ROLE OBJECT:', user.Role);
-
 
             const payload = {
                 id: user.id,
@@ -113,10 +111,15 @@ class AuthService {
     }
 
     async refreshToken(refreshTokenValue) {
+        if (!refreshTokenValue) {
+            throw new BaseError("Refresh token is required", 400, "TOKEN_MISSING");
+        }
+
         const transaction = await sequelize.transaction();
 
         try {
             const decoded = verifyRefreshToken(refreshTokenValue);
+            if (!decoded?.jti) throw new Error("Invalid refresh token payload");
 
             const tokenRecord = await RefreshToken.findOne({
                 where: {
@@ -127,7 +130,7 @@ class AuthService {
             });
 
             if (!tokenRecord) {
-                throw new Error('Invalid or expired refresh token');
+                throw new BaseError("Refresh token not found or expired", 401, "TOKEN_EXPIRED");
             }
 
             const user = await User.findOne({
@@ -137,9 +140,10 @@ class AuthService {
             });
 
             if (!user) {
-                throw new Error('User not found or inactive');
+                throw new BaseError("User not found or inactive", 404, "USER_NOT_FOUND");
             }
 
+            // 4. Payload baru
             const payload = {
                 id: user.id,
                 email: user.email,
@@ -149,11 +153,10 @@ class AuthService {
 
             const newTokens = generateTokenPair(payload);
 
-            await RefreshToken.destroy({
-                where: { token: refreshTokenValue },
-                transaction
-            });
+            await RefreshToken.destroy({ where: { token: tokenRecord.token }, transaction });
+
             await this.cleanExpiredTokens(transaction);
+
             await this.storeRefreshToken(user.id, newTokens.refreshToken, transaction);
 
             await transaction.commit();
@@ -166,7 +169,8 @@ class AuthService {
             };
         } catch (error) {
             await transaction.rollback();
-            throw new Error(`Token refresh failed: ${error.message}`);
+            console.error("Refresh token failed:", error);
+            throw new BaseError(`Token refresh failed: ${error.message}`, 500, "REFRESH_ERROR");
         }
     }
 
@@ -214,7 +218,6 @@ class AuthService {
 
             const hashed = await hashPassword(newPassword);
 
-            // 2. Update password + invalidate token
             user.password = hashed;
             await user.save({ transaction });
 
@@ -274,6 +277,7 @@ class AuthService {
     async getAllUsers() {
         try {
             const users = await User.findAll({
+                attributes: { exclude: ['id', 'password', 'role_id'] },
                 include: [
                     {
                         model: Role,
@@ -379,7 +383,7 @@ class AuthService {
         try {
             const user = await User.findOne({
                 where: {
-                    id: user_id, 
+                    id: user_id,
                 },
                 include: [{ model: Role, as: 'Role' }]
             });
