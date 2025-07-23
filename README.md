@@ -1,82 +1,182 @@
-# Employee Attendance & Monitoring System (Frontend)
+# Backend API - Employee Attendance & Monitoring System
 
-This is the **React-based frontend** for a microservices employee attendance and monitoring web application. It supports login, attendance (WFH), employee management, and password change, all aligned with the requirements of the **Fullstack Developer Skill Test**.
+This is the **Express-based backend** for a microservices employee attendance and monitoring web application, supporting JWT authentication, refresh tokens, RBAC, and separation of concerns through services:
 
-## 📌 Use Cases
+- **Auth Service**
+- **Employee Service**
+- **Attendance Service**
 
-### 1. **WFH Attendance Application**
-Employees can:
-- Log in
-- Submit attendance with:
-  - Date & time stamp
-  - Uploaded photo as WFH proof
+---
 
-### 2. **Employee Monitoring (Admin)**
-HR Admin can:
-- Add/update employee data
-- View submitted attendance data (view only)
-- Manage roles and change own password
+## 🧩 Microservices Overview
 
-## 📁 Component Structure
+### 1. **Auth Service**
+Handles authentication, user registration, password management, and login logs.
 
+- **Port**: `4002`
+- **Environment**: `NODE_ENV=development`
+
+#### Features:
+- JWT-based login & refresh token system
+- Role-based access control (RBAC)
+- Change and reset password
+- User activation/deactivation
+- Login log retrieval
+
+#### Routes:
 ```
-components/
-├── Login.tsx                      # Login screen (redirects based on role)
-├── AdminHRDashboard.tsx          # Main HR Admin dashboard
-├── EmployeeDashboard.tsx         # Main Employee dashboard
-├── RoleManagement.tsx            # Admin-only: manage roles & permissions
-├── admin-dashboard/
-│   ├── EmployeeManagement.tsx    # Manage employee records
-│   ├── AttendanceMonitoring.tsx  # View all attendance records
-│   ├── EmployeeProfile.tsx       # View employee profile (admin)
-│   └── AdminSecurity.tsx         # Change admin password
-└── dashboard/
-    ├── AttendanceTab.tsx         # Clock-in/out UI + upload photo
-    ├── AttendanceStats.tsx       # Personal attendance stats
-    ├── AttendanceHistory.tsx     # View personal history
-    ├── ProfileTab.tsx            # View/edit personal profile
-    ├── ProfileCard.tsx           # Sub-component of profile
-    ├── SecurityTab.tsx           # Change own password (employee)
-    └── HeaderBar.tsx             # Dashboard header/navigation
+POST   /login                   # Login with rate limiting
+POST   /register                # HR-only: Register a new user
+POST   /refresh-token           # Get new access token from refresh token
+POST   /logout                  # Logout current session
+POST   /logout-all              # Logout from all devices
+POST   /change-password         # Authenticated user changes password
+POST   /reset-password          # HR resets another user's password
+GET    /login-logs              # HR views login logs
+GET    /users/email/:email      # Fetch user by email
+GET    /get-all-users           # HR fetches all users
+GET    /user/:id                # HR fetches user by ID
+PATCH  /users/:id/active        # HR activates/deactivates a user
 ```
+
+---
+
+### 2. **Attendance Service**
+Manages employee WFH attendance including photo uploads, timestamps, and stats.
+
+- **Port**: `4004`
+- **Environment**: `NODE_ENV=development`
+
+#### Features:
+- Clock-in/out system with image proof
+- Individual attendance history and stats
+- HR/admin can view all records and stats
+
+#### Routes:
+```
+POST   /clock-in                # Upload photo + timestamp
+PATCH  /clock-out               # Complete the attendance entry
+GET    /me                      # Personal attendance history
+GET    /me/today                # Check if already checked in today
+GET    /me/stats                # Personal stats
+GET    /all                     # Admin: view all records
+GET    /stats/all               # Admin: view all stats
+GET    /:id                     # Admin: view one record
+```
+
+---
+
+### 3. **Employee Service**
+Handles master data for employees and links with user accounts.
+
+- **Port**: `4003`
+- **Environment**: `NODE_ENV=development`
+
+#### Features:
+- Create employee + user together (photo upload supported)
+- Self profile view/edit (secured)
+- HR can update or delete employees
+- Support bulk lookup (used by attendance service)
+
+#### Routes:
+```
+POST   /                       # HR: create new employee
+GET    /profile                # Self: view profile
+PUT    /profile                # Self: update profile
+GET    /bulk                   # HR: get multiple employees by user_id[]
+GET    /:id                    # HR: get single employee by ID
+PUT    /:id                    # HR: update employee by ID
+DELETE /:id                    # HR: terminate employee
+GET    /                       # HR: search employees
+```
+
+---
 
 ## 🔐 Security
 
-- **SecurityTab.tsx (Employee)**: Change password securely
-- **AdminSecurity.tsx (Admin)**: Same purpose, scoped for admin usage
+- JWT Access and Refresh Tokens
+- Role-based permissions middleware
+- Fine-grained permission control (e.g., `authorizePermission('employees', 'read')`)
+- Rate limiting middleware for sensitive routes (login, profile)
 
-## 🔧 Tech Stack
+### JWT Environment Settings
+```
+JWT_SECRET=your_super_secret_jwt_key
+JWT_ACCESS_SECRET=access_secret_key
+JWT_REFRESH_SECRET=refresh_secret_key
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+JWT_ISSUER=auth-service
+JWT_AUDIENCE=employee-management-api
+```
 
-- **React + TypeScript**
-- UI framework: (e.g., Tailwind CSS or ShadCN - optional)
-- REST API ready for microservices
-- Integrates with Express-based backend (Node.js preferred)
+---
 
-## ⚙️ How to Use
+## 🗃️ Database
 
-1. Clone this repo
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Run the app:
-   ```bash
-   npm run dev
-   ```
-4. Ensure you are connected to the backend microservices (auth, attendance, employee)
+### PostgreSQL via Supabase
+```
+DB_USER=postgres.luqfemndwezixbygklle
+DB_PASSWORD=HAW4ADASDyxrt1NZ
+DB_HOST=aws-0-ap-southeast-1.pooler.supabase.com
+DB_PORT=6543
+DB_NAME=postgres
+```
 
-## ✅ Features Checklist (Skill Test)
+---
 
-| Feature                                  | Implemented |
-|------------------------------------------|-------------|
-| Login with role-based dashboard          | ✅           |
-| Submit attendance with photo & time      | ✅           |
-| Admin view attendance (read-only)        | ✅           |
-| Admin manage employee master data        | ✅           |
-| Role & permission management             | ✅           |
-| Change password (admin & employee)       | ✅           |
-| React component structure + API usage    | ✅           |
+## 🧱 Tech Stack
+
+- Node.js + Express
+- Sequelize ORM + PostgreSQL
+- Multer (photo upload)
+- UUID for IDs
+- RBAC with roles/permissions stored in DB
+- Modular architecture with shared middlewares & utilities
 
 ## 📄 License
 
-This project is for skill test evaluation and demo purposes. Modify as needed.
+This backend project is part of a fullstack skill test. Adapt as needed.
+
+
+---
+
+## 🚀 Getting Started
+
+Each microservice (`auth-service`, `employee-service`, `attendance-service`) is located in its own directory and must be installed and run independently.
+
+### 🛠 Installation Steps
+
+Repeat the following for each service (`auth-service`, `employee-service`, `attendance-service`):
+
+```bash
+cd [service-folder-name]
+npm install
+```
+
+Example:
+```bash
+cd auth-service
+npm install
+
+cd ../employee-service
+npm install
+
+cd ../attendance-service
+npm install
+```
+
+### ▶️ Run Each Service
+
+```bash
+npm run dev
+```
+
+Each service listens on its own port:
+- `auth-service`: http://localhost:4002
+- `employee-service`: http://localhost:4003
+- `attendance-service`: http://localhost:4004
+
+### 🔄 Environment Variables
+
+Create a `.env` file in each service based on the values provided in the `README`. Be sure to use the correct JWT and database credentials in each one.
