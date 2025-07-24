@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const JWT_CONFIG = {
     ACCESS_TOKEN_SECRET: process.env.JWT_ACCESS_SECRET || 'your-super-secret-access-key',
     REFRESH_TOKEN_SECRET: process.env.JWT_REFRESH_SECRET || 'your-super-secret-refresh-key',
-    ACCESS_TOKEN_EXPIRES_IN:'1m',
+    ACCESS_TOKEN_EXPIRES_IN:process.env.JWT_ACCESS_EXPIRES_IN || '15m',
     REFRESH_TOKEN_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
     ISSUER: process.env.JWT_ISSUER || 'employee-management-system',
     AUDIENCE: process.env.JWT_AUDIENCE || 'employee-management-users'
@@ -21,7 +21,7 @@ const generateAccessToken = (payload) => {
         },
         JWT_CONFIG.ACCESS_TOKEN_SECRET,
         {
-            expiresIn: "1m",
+            expiresIn: JWT_CONFIG.ACCESS_TOKEN_EXPIRES_IN,
             issuer: JWT_CONFIG.ISSUER,
             audience: JWT_CONFIG.AUDIENCE
         }
@@ -45,7 +45,6 @@ const generateRefreshToken = (payload) => {
     );
 };
 
-// Verify access token
 const verifyAccessToken = (token) => {
     try {
         const decoded = jwt.verify(token, JWT_CONFIG.ACCESS_TOKEN_SECRET, {
@@ -63,7 +62,6 @@ const verifyAccessToken = (token) => {
     }
 };
 
-// Verify refresh token
 const verifyRefreshToken = (token) => {
     try {
         const decoded = jwt.verify(token, JWT_CONFIG.REFRESH_TOKEN_SECRET, {
@@ -81,7 +79,6 @@ const verifyRefreshToken = (token) => {
     }
 };
 
-// Generate token pair
 const generateTokenPair = (payload) => {
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
@@ -94,7 +91,6 @@ const generateTokenPair = (payload) => {
     };
 };
 
-// Decode token without verification (for debugging)
 const decodeToken = (token) => {
     try {
         return jwt.decode(token, { complete: true });
@@ -103,7 +99,6 @@ const decodeToken = (token) => {
     }
 };
 
-// Get token expiration time
 const getTokenExpiration = (token) => {
     try {
         const decoded = jwt.decode(token);
@@ -113,7 +108,6 @@ const getTokenExpiration = (token) => {
     }
 };
 
-// Check if token is expired
 const isTokenExpired = (token) => {
     try {
         const decoded = jwt.decode(token);

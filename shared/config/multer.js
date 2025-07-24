@@ -32,7 +32,7 @@ function createMulterUploader(subFolder = 'uploads') {
     storage,
     fileFilter,
     limits: {
-      fileSize: 2 * 1024 * 1024 // 2 MB
+      fileSize: 2 * 1024 * 1024 
     }
   });
 }

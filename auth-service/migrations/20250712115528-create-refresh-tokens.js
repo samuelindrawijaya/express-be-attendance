@@ -14,6 +14,8 @@ module.exports = {
           model: 'users',
           key: 'id'
         },
+        unique: true,
+        allowNull: false,
         onDelete: 'CASCADE'
       },
       token: Sequelize.TEXT,

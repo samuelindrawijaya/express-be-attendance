@@ -3,7 +3,13 @@ const { hashPassword, comparePassword } = require('../../shared/utils/bcrypt');
 const InvalidCredentialsError = require('../../shared/utils/errors/InvalidCredentialsError');
 const { Op } = require('sequelize');
 const { verifyRefreshToken, generateTokenPair } = require('../../shared/config/jwt');
-const bcrypt = require('bcryptjs');
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+const nowJKT = dayjs().tz('Asia/Jakarta');
 
 class AuthService {
     async login(email, password, ipAddress, userAgent) {
@@ -73,7 +79,8 @@ class AuthService {
             await RefreshToken.upsert({
                 user_id: userId,
                 token,
-                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                expires_at: nowJKT.add(7, 'day').toDate()
+
             }, { transaction });
         } catch (error) {
             throw new Error(`Store refresh token failed: ${error.message}`);
@@ -100,7 +107,7 @@ class AuthService {
         try {
             return await RefreshToken.destroy({
                 where: {
-                    expires_at: { [Op.lt]: new Date() }
+                    expires_at: { [Op.lt]: nowJKT.toDate() }
                 },
                 transaction
             });
@@ -124,7 +131,7 @@ class AuthService {
             const tokenRecord = await RefreshToken.findOne({
                 where: {
                     token: refreshTokenValue,
-                    expires_at: { [Op.gt]: new Date() }
+                    expires_at: { [Op.gt]: nowJKT.toDate() }
                 },
                 transaction
             });
@@ -143,7 +150,6 @@ class AuthService {
                 throw new BaseError("User not found or inactive", 404, "USER_NOT_FOUND");
             }
 
-            // 4. Payload baru
             const payload = {
                 id: user.id,
                 email: user.email,
@@ -260,6 +266,7 @@ class AuthService {
     async getUserByEmail(email) {
         try {
             const user = await User.findOne({
+                attributes: { exclude: ['id', 'password', 'role_id'] },
                 where: {
                     email,
                     is_active: true

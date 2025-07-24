@@ -32,7 +32,6 @@ const authenticateToken = (req, res, next) => {
     }
 };
 
-// Middleware: Role-based Authorization
 const authorizeRole = (...allowedRoles) => {
     return (req, res, next) => {
         if (!req.user) {

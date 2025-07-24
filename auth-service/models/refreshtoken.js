@@ -14,7 +14,11 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4
     },
-    user_id: DataTypes.UUID,
+    user_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      unique: true,
+    },
     token: DataTypes.TEXT,
     expires_at: DataTypes.DATE
   }, {

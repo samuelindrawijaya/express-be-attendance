@@ -16,7 +16,7 @@ async function createEmployeeWithUser(data, file, req) {
         position,
         phone,
         address,
-        hire_date
+        hire_date,
     } = data;
 
     if (!email || !password || !full_name || !nik || !name) {
@@ -31,7 +31,6 @@ async function createEmployeeWithUser(data, file, req) {
 
     let user;
     try {
-        // 1. Register user di auth-service
         const userRes = await axios.post(
             `http://localhost:4002/api/auth/register`,
             { name, email, password },
@@ -48,7 +47,6 @@ async function createEmployeeWithUser(data, file, req) {
         throw new BaseError('User creation failed', 500, 'USER_CREATION_FAILED');
     }
 
-    // 2. Cek apakah Employee sudah ada
     const exists = await Employee.findOne({
         where: {
             user_id: user.id,
@@ -60,13 +58,11 @@ async function createEmployeeWithUser(data, file, req) {
         throw new BaseError('Employee already exists for this user', 409, 'EMPLOYEE_EXISTS');
     }
 
-    // 3. (Opsional) Cek NIK unik
     const nikExists = await Employee.findOne({ where: { nik } });
     if (nikExists) {
         throw new BaseError('NIK already registered', 409, 'NIK_EXISTS');
     }
 
-    // 4. Buat Employee
     const newEmployee = await Employee.create({
         user_id: user.id,
         full_name,
@@ -76,7 +72,7 @@ async function createEmployeeWithUser(data, file, req) {
         phone,
         address,
         hire_date,
-        photo: file?.filename || null
+        photo: file?.filename || null,
     });
 
     return {

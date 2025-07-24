@@ -2,8 +2,18 @@ const { Attendance } = require('../models');
 const BaseError = require('../../shared/utils/errors/BaseError');
 const { Op } = require('sequelize');
 const axios = require('axios');
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+const nowJKT = dayjs().tz('Asia/Jakarta');
+const today = nowJKT.format('YYYY-MM-DD');
 async function clockInAttendance(data, file, user) {
     const { employee_id, type, notes } = data;
+    const nowJKT = dayjs().tz('Asia/Jakarta');
+    const today = nowJKT.format('YYYY-MM-DD');
 
     if (!employee_id || !type) {
         throw new BaseError('Missing required fields', 400, 'VALIDATION_ERROR');
@@ -12,7 +22,6 @@ async function clockInAttendance(data, file, user) {
     if (type === 'wfh' && !file) {
         throw new BaseError('Photo is required for WFH check-in', 400, 'PHOTO_REQUIRED');
     }
-    const today = new Date().toISOString().split('T')[0];
 
     const existing = await Attendance.findOne({
         where: {
@@ -29,7 +38,7 @@ async function clockInAttendance(data, file, user) {
         user_id: user.id,
         employee_id,
         date: today,
-        check_in: new Date(),
+        check_in: nowJKT.toDate(),
         type,
         photo: file?.filename || null, // optional
         notes: notes || null
@@ -46,8 +55,7 @@ async function clockInAttendance(data, file, user) {
 
 
 async function clockOutAttendance(employee_id, user_id) {
-    const today = new Date().toISOString().split('T')[0];
-
+   
     const attendance = await Attendance.findOne({
         where: {
             employee_id,
@@ -55,7 +63,15 @@ async function clockOutAttendance(employee_id, user_id) {
             date: today
         }
     });
+    if(attendance.type == 'onsite') 
+    {
+        const hourCheckin = dayjs(attendance.check_in).tz('Asia/Jakarta').hour();
+        const hourCheckout = nowJKT.hour();
 
+        if (hourCheckout - hourCheckin < 8) {
+            throw new BaseError('Cannot clock out before 8 hours of work', 400, 'CLOCK_OUT_TOO_EARLY');
+        }
+    }
     if (!attendance) {
         throw new BaseError('No check-in record found for today', 404, 'ATTENDANCE_NOT_FOUND');
     }
@@ -64,7 +80,7 @@ async function clockOutAttendance(employee_id, user_id) {
         throw new BaseError('Already checked out today', 409, 'ALREADY_CHECKED_OUT');
     }
 
-    attendance.check_out = new Date();
+    attendance.check_out = nowJKT.toDate();
     await attendance.save();
 
     return {
@@ -103,7 +119,8 @@ async function getMyAttendance(startDate, endDate, user_id) {
     return result;
 }
 async function getTodayAttendance(user_id) {
-    const today = new Date().toISOString().split('T')[0];
+    const nowJKT = dayjs().tz('Asia/Jakarta');
+    const today = nowJKT.format('YYYY-MM-DD');
 
     const attendance = await Attendance.findOne({
         where: { user_id, date: today },
@@ -142,7 +159,7 @@ async function getMyAttendanceStats(user_id) {
         const minute = new Date(record.check_in).getMinutes();
         const totalMinutes = hour * 60 + minute;
 
-        if (totalMinutes <= 510) { // <= 08:30
+        if (totalMinutes <= 510) {
             stats.on_time++;
         } else {
             stats.late++;
@@ -286,7 +303,7 @@ async function getAllAttendanceStats() {
         if (record.type === 'wfh') stats.total_wfh++;
         if (record.type === 'onsite') stats.total_onsite++;
 
-        const checkIn = new Date(record.check_in);
+        const checkIn = dayjs(record.check_in).tz('Asia/Jakarta');
         const totalMinutes = checkIn.getHours() * 60 + checkIn.getMinutes();
 
         if (totalMinutes <= 510) {
@@ -298,8 +315,6 @@ async function getAllAttendanceStats() {
 
     return stats;
 }
-
-
 
 
 module.exports = {

@@ -11,7 +11,7 @@ const authLimiter = rateLimit({
 });
 
 const generalLimiter = rateLimit({
-    windowMs: 60 * 1000, // 1 menit
+    windowMs: 60 * 1000,
     max: 300000, 
     message: {
         success: false,
